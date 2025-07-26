@@ -1,0 +1,275 @@
+{% extends 'base.html' %} {% block base %}
+  <div class="container mb-5">
+    <div class="row justify-content-center align-items-center h-100">
+      <div class="col-md-10">
+        <div class="container p-5 rounded-2 mt-5 bg-dark">
+          <p class="text-center text-white fs-1 mb-0 fw-medium">Testeur de Sécurité API REST</p>
+          <p class="text-white text-center fw-medium">Vérifiez les vulnérabilités courantes dans votre API</p>
+        </div>
+        <div class="container mt-4">
+          <div class="row">
+            <div class="col-md-5 p-3">
+              <div class="container bg-light p-4">
+                <h3><i class="bi bi-gear h3"></i> Configuration du test</h3>
+                <div class="form-group mt-4">
+                  <label for="form-select" class="form-label">Type de test</label>
+                  <select id="form-select" aria-label="Choisir un test de sécurité" class="form-select">
+                    <option value="">-- Choisir un test --</option>
+                    <option value="sql_injection">Injection SQL</option>
+                    <option value="broken_auth">Authentification cassée</option>
+                    <option value="idor">Référence directe non sécurisée (IDOR)</option>
+                    <option value="data_exposure">Exposition des données sensibles</option>
+                    <option value="misconfiguration">Mauvaise configuration du serveur</option>
+                    <option value="auth_flaws">Authentification interrompue</option>
+                    <option value="function_auth">Autorisation au niveau des fonctions</option>
+                  </select>
+                </div>
+
+                {% comment %}Test d'injection SQL{% endcomment %}
+                <div class="mt-3 content-test {% if active_test == 'sql_injection' %}active{% endif %}" id="sql_injection">
+                  <div class="alert alert-info fw-medium">Injection SQL</div>
+                  <div class="test-description">
+                    <p>Ce test tente d'injecter des commandes SQL dans les paramètres de l'API pour vérifier si elles sont exécutées.</p>
+                  </div>
+                  <form action="{% url 'test_sql_injection' %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                      <label for="param" class="form-label">Paramètre à injecter <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" id="param" name="param" required />
+                    </div>
+                    <div class="mb-3">
+                      <label for="url" class="form-label">URL protégée <span class="text-danger">*</span></label>
+                      <input type="url" class="form-control" id="url" name="url" required />
+                    </div>
+                    <div class="mb-3">
+                      <label for="token" class="form-label">Jeton d'authentification</label>
+                      <input type="text" class="form-control" id="token" name="token" />
+                    </div>
+                    <button type="submit" class="btn btn-dark">Exécuter le Test</button>
+                  </form>
+                </div>
+                {% comment %}Test d'authentification cassée{% endcomment %}
+                <div class="mt-3 content-test {% if active_test == 'broken_auth' %}active{% endif %}" id="broken_auth">
+                  <div class="alert alert-info fw-medium">Authentification cassée</div>
+                  <div class="test-description">
+                    <p>Ce test tente d'accéder à une ressource protégée sans fournir de jeton d’authentification afin de vérifier si le système empêche correctement les accès non autorisés.</p>
+                  </div>
+                  <form action="{% url 'test_broken_auth' %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                      <label for="url" class="form-label">URL protégée <span class="text-danger">*</span></label>
+                      <input type="url" class="form-control" id="url" name="url" placeholder="http://localhost:8000/api/protected-endpoint/" required />
+                    </div>
+                    <button type="submit" class="btn btn-dark">Exécuter le Test</button>
+                  </form>
+                </div>
+                {% comment %}Test IDOR{% endcomment %}
+                <div class="mt-3 content-test {% if active_test == 'idor' %}active{% endif %}" id="idor">
+                  <div class="alert alert-info fw-medium">Référence directe non sécurisée (IDOR)</div>
+                  <div class="test-description">
+                    <p>Ce test vérifie si un utilisateur peut accéder aux données d’un autre utilisateur en modifiant directement l’ID dans l’URL de l’API.</p>
+                  </div>
+                  <form action="{% url 'test_idor' %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                      <label for="url" class="form-label">URL avec l’ID ciblé <span class="text-danger">*</span></label>
+                      <input type="url" class="form-control" id="url" name="url" placeholder="http://localhost:8000/api/user/2/" required />
+                    </div>
+                    <div class="mb-3">
+                      <label for="token" class="form-label">Jeton d’authentification <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" id="token" name="token" required />
+                    </div>
+                    <button type="submit" class="btn btn-dark">Exécuter le Test</button>
+                  </form>
+                </div>
+                {% comment %}Test d'exposition de données sensibles{% endcomment %}
+                <div class="mt-3 content-test {% if active_test == 'data_exposure' %}active{% endif %}" id="data_exposure">
+                  <div class="alert alert-info fw-medium">Exposition de données sensibles</div>
+                  <div class="test-description">
+                    <p>Ce test analyse la réponse de l’API pour détecter la présence d’informations sensibles comme des mots de passe, tokens ou secrets.</p>
+                  </div>
+                  <form action="{% url 'test_data_exposure' %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                      <label for="url" class="form-label">URL à analyser <span class="text-danger">*</span></label>
+                      <input type="url" class="form-control" id="url" name="url" placeholder="http://localhost:8000/api/secret/" required />
+                    </div>
+                    <button type="submit" class="btn btn-dark">Exécuter le Test</button>
+                  </form>
+                </div>
+                {% comment %}Test de mauvaise configuration serveur{% endcomment %}
+                <div class="mt-3 content-test {% if active_test == 'misconfiguration' %}active{% endif %}" id="misconfiguration">
+                  <div class="alert alert-info fw-medium">Mauvaise configuration du serveur</div>
+                  <div class="test-description">
+                    <p>Ce test vérifie si le serveur renvoie une erreur (5xx) ou une trace de pile lorsqu'on accède à une route invalide.</p>
+                  </div>
+                  <form action="{% url 'test_misconfiguration' %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                      <label for="url" class="form-label">URL à tester <span class="text-danger">*</span></label>
+                      <input type="url" class="form-control" id="url" name="url" placeholder="http://localhost:8000/api/invalid-route" required />
+                    </div>
+                    <button type="submit" class="btn btn-dark">Exécuter le Test</button>
+                  </form>
+                </div>
+                {% comment %}Test d'authentification interrompue{% endcomment %}
+                <div class="mt-3 content-test {% if active_test == 'auth_flaws' %}active{% endif %}" id="auth_flaws">
+                  <div class="alert alert-info fw-medium">Authentification interrompue</div>
+                  <div class="test-description">
+                    <p>Ce test simule une session expirée ou un jeton invalide pour vérifier si l'API rejette correctement l'accès.</p>
+                  </div>
+                  <form action="{% url 'test_auth_flaws' %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                      <label for="url" class="form-label">URL protégée <span class="text-danger">*</span></label>
+                      <input type="url" class="form-control" id="url" name="url" placeholder="http://localhost:8000/api/protected-endpoint/" required />
+                    </div>
+                    <button type="submit" class="btn btn-dark">Exécuter le Test</button>
+                  </form>
+                </div>
+                {% comment %}Test d'autorisation de niveau de fonction{% endcomment %}
+                <div class="mt-3 content-test {% if active_test == 'function_auth' %}active{% endif %}" id="function_auth">
+                  <div class="alert alert-info fw-medium">Autorisation de niveau de fonction</div>
+                  <div class="test-description">
+                    <p>Ce test vérifie si un utilisateur non autorisé peut accéder à des fonctionnalités ou des ressources réservées à des rôles spécifiques (comme admin).</p>
+                  </div>
+                  <form action="{% url 'test_function_auth' %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                      <label for="url" class="form-label">URL de l’endpoint protégé <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" id="url" name="url" required />
+                    </div>
+                    <div class="mb-3">
+                      <label for="token" class="form-label">Jeton d’authentification <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" id="token" name="token" required />
+                    </div>
+                    <button type="submit" class="btn btn-dark">Exécuter le Test</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-7 p-3">
+              <div class="container bg-light p-4">
+                <h3><i class="bi bi-shield-exclamation h3"></i> Résultat du test</h3>
+                {% if result %}
+                  <div class="card border-0 shadow-sm mt-3">
+                    <div class="card-header bg-dark text-white">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <h6>{{ result.test_type }}</h6>
+                        {% if result.is_vulnerable %}
+                          <span class="badge bg-danger rounded-pill"><i class="bi bi-exclamation-triangle-fill me-1"></i>Vulnérable</span>
+                        {% else %}
+                          <span class="badge bg-success rounded-pill"><i class="bi bi-check-circle-fill me-1"></i>Sécurisé</span>
+                        {% endif %}
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <div class="mb-3">
+                        <h6 class="text-muted mb-2"><i class="bi bi-http me-2"></i>Statut HTTP</h6>
+                        {% if result.status_code == 200 %}
+                          <span class="badge bg-success">{{ result.status_code }} OK</span>
+                        {% elif result.status_code == 500 %}
+                          <span class="badge bg-danger">{{ result.status_code }} Erreur</span>
+                        {% else %}
+                          <span class="badge bg-warning text-dark">{{ result.status_code }}</span>
+                        {% endif %}
+                      </div>
+                      <div class="mb-3">
+                        <h6 class="text-muted mb-2"><i class="bi bi-link-45deg me-2"></i>URL testée</h6>
+                        <div class="p-2 bg-light rounded">{{ result.url }}</div>
+                      </div>
+                      {% if result.param %}
+                        <div class="mb-3">
+                          <h6 class="text-muted mb-2"><i class="bi bi-gear me-2"></i>Paramètre</h6>
+                          <span class="badge bg-secondary">{{ result.param }}</span>
+                        </div>
+                      {% endif %}
+
+                      {% if result.token %}
+                        <div class="mb-3">
+                          <h6 class="text-muted mb-2"><i class="bi bi-key me-2"></i>Jéton d'authentification</h6>
+                          <div class="p-2 bg-light rounded">{{ result.token }}</div>
+                        </div>
+                      {% endif %}
+                      <div class="alert {% if result.is_vulnerable %}
+                          
+                          
+                          
+                          alert-danger
+
+
+
+                        {% else %}
+                          
+                          
+                          
+                          alert-success
+
+
+
+                        {% endif %} mt-3">
+                        <div class="d-flex align-items-center">
+                          <i class="bi {% if result.is_vulnerable %}
+                              
+                              
+                              
+                              bi-exclamation-octagon-fill
+
+
+
+                            {% else %}
+                              
+                              
+                              
+                              bi-shield-check
+
+
+
+                            {% endif %} me-2 fs-5">
+
+                          </i>
+                          {{ result.message }}
+                        </div>
+                      </div>
+                      <button onclick="window.print()" class="btn btn-dark">Imprimer en PDF</button>
+                    </div>
+                  </div>
+                {% else %}
+                  <div class="alert alert-primary mt-4">
+                    <div class="d-flex align-items-start">
+                      <div>
+                        <h5 class="alert-heading mb-2"><i class="bi bi-lightbulb h5"></i> Comment obtenir des résultats ?</h5>
+                        <ul class="mb-1">
+                          <li>Choisir le type de test</li>
+                          <li>Remplir le formulaire de test</li>
+                          <li class="mt-2">
+                            Cliquez sur <span class="badge bg-dark">Exécuter le Test</span>
+                          </li>
+                          <li class="mt-2">Analysez les résultats qui s'afficheront ici</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const select = document.getElementById('form-select')
+    const content_test = document.querySelectorAll('.content-test')
+    
+    select.addEventListener('change', () => {
+      content_test.forEach((item) => {
+        item.classList.remove('active')
+        if (item.id === select.value) {
+          item.classList.add('active')
+        }
+      })
+    })
+  </script>
+{% endblock %}

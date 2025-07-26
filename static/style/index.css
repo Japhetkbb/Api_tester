@@ -1,0 +1,24 @@
+* {
+  font-family: "Outfit", serif;
+  font-size: 14px;
+  letter-spacing: .2px;
+}
+
+body {
+  background-color: #f5f5f5;
+}
+
+.test-description {
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #e9f5ff;
+  border-left: 4px solid rgb(21, 56, 71)
+}
+
+.content-test {
+  display: none;
+}
+
+.content-test.active {
+  display: block;
+}
