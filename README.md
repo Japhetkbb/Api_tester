@@ -1,0 +1,140 @@
+=================================
+Procédure pour exécuter le projet
+=================================
+    1.1. Création de l'environnement virtuel
+        Sous Linux / macOS
+            python3 -m venv .venv
+            source .venv/bin/activate
+
+        Sous Windows
+            python -m venv .venv
+            .\.venv\Scripts\activate
+
+    1.2. Installation des libaraiels
+        pip install -r requirements.txt
+
+    1.3. Exécution des migrations
+        python3 manage.py makemigrations
+        python3 manage.py migrate
+
+
+===============================
+API Documentation & Test Guide
+===============================
+
+Base URL : http://localhost:8000/
+
+-----------------------------
+1. Authentification (Token)
+-----------------------------
+- URL: /api-auth/
+- Méthode: POST
+- Description: Permet à un utilisateur de s’authentifier avec ses identifiants et de recevoir un token.
+
+▶ Exemple de requête:
+POST /api-auth/
+{
+  "username": "admin",
+  "password": "motdepasse"
+}
+
+▶ Réponse attendue:
+{
+  "token": "abc123..."
+}
+
+----------------------------------------------------
+2. Safe Product Search (Sécurisé contre les injections)
+----------------------------------------------------
+- URL: /safe-product-search/
+- Méthode: GET
+- Description: Recherche de produits avec protection contre l'injection SQL.
+
+▶ Exemple:
+GET /safe-product-search/?code=PR05
+
+-----------------------------------------------------
+3. Unsafe Product Search (Vulnérable à l'injection SQL)
+-----------------------------------------------------
+- URL: /un-safe-product-search/
+- Méthode: GET
+- Description: Recherche vulnérable aux injections SQL.
+
+▶ Exemple:
+GET /un-safe-product-search/?code=PR05
+
+----------------------------------------------------
+4. Safe User List (Authentification requise)
+----------------------------------------------------
+- URL: /safe-user-list/
+- Méthode: GET
+- Description: Retourne une liste sécurisée des utilisateurs authentifiés.
+
+▶ En-têtes requis:
+Authorization: Token <votre_token>
+
+-----------------------------------------------------
+5. Unsafe User List (Vulnérable à la casse d'authentification)
+-----------------------------------------------------
+- URL: /un-safe-user-list/
+- Méthode: GET
+- Description: Liste les utilisateurs sans validation stricte d’authentification.
+
+-----------------------------------------------------
+6. Safe User Detail (Sécurisé contre l'IDOR)
+-----------------------------------------------------
+- URL: /safe-user-detail/<id>/
+- Méthode: GET
+- Description: Affiche un profil utilisateur de manière sécurisée (vérifie les droits d'accès).
+
+▶ Exemple:
+GET /safe-user-detail/2/
+Authorization: Token <votre_token>
+
+-----------------------------------------------------
+7. Unsafe User Detail (Vulnérable à l'IDOR)
+-----------------------------------------------------
+- URL: /un-safe-user-detail/<id>/
+- Méthode: GET
+- Description: Accès direct à un profil utilisateur sans vérification d'autorisation.
+
+-----------------------------------------------------
+8. Sensitive Data Exposure (Vulnérable)
+-----------------------------------------------------
+- URL: /sensitive-data/
+- Méthode: GET
+- Description: Affiche des informations sensibles, utile pour les tests de fuite de données.
+
+-----------------------------------------------------
+9. Divide Error Handled (Sécurisé)
+-----------------------------------------------------
+- URL: /divide-error-handled/
+- Méthode: GET
+- Description: Teste une erreur de division par zéro, gérée proprement par le serveur.
+
+-----------------------------------------------------
+10. Divide Error Unhandled (Vulnérable)
+-----------------------------------------------------
+- URL: /divide-error-unhandled/
+- Méthode: GET
+- Description: Provoque une division par zéro sans gestion d’erreur — pour tester les mauvaises configurations.
+
+-----------------------------------------------------
+11. Admin User List (Autorisation requise)
+-----------------------------------------------------
+- URL: /admin/user-list/
+- Méthode: GET
+- Description: Accessible uniquement aux administrateurs.
+
+▶ En-têtes requis:
+Authorization: Token <admin_token>
+
+-----------------------------------------------------
+12. Product List (Public ou sécurisé selon config)
+-----------------------------------------------------
+- URL: /products/
+- Méthode: GET
+- Description: Liste les produits disponibles.
+
+▶ Exemple:
+GET /products/
